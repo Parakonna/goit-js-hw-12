@@ -10,7 +10,7 @@ export const fetchPhotos = async (searchQuery, page) => {
       safesearch: true,
       key: API_KEY,
       q: searchQuery,
-      page,
+      page: page,
       per_page: 15,
   });
 

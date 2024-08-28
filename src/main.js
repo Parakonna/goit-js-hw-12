@@ -9,11 +9,20 @@ import { createGalleryCard } from './js/render-functions.js';
 let currentPaga = 1;
 let searchedValue = "";
 
+const lightbox = new SimpleLightbox('.js-gallery a', {
+        overlay: true,
+        captionsData: 'alt',
+        overlayOpacity: 0.8,
+        captionDelay: 250,
+        focus: true,
+      });
 
 const searchFormEl = document.querySelector('.js-search-form');
 const galleryEL = document.querySelector('.js-gallery');
 const loaderEl = document.querySelector('.js-loader');
+const inputEl = document.querySelector('.js-search-input')
 const loadMoreEl = document.querySelector('.loader-more');
+
 
 function showLoader() {
   loaderEl.classList.remove('is-hidden');
@@ -26,73 +35,73 @@ showLoader();
 setTimeout(hideLoader, 2000);
 
 const onSearchFormSubmit = async event => {
+
     event.preventDefault();
- searchedValue = searchFormEl.elements.user_query.value.trim();
+    galleryEL.innerHTML = '';
+
+    searchedValue = inputEl.value.trim();
     currentPaga = 1;
+
+    if (searchedValue === '') {
+    iziToast.error({
+      message:
+        'Sorry',
+      position: 'topRight',
+    });
+        hideLoader();
+        return;
+    }
     try {
         const data = await fetchPhotos(searchedValue, currentPaga)
-        if (searchedValue === '') {
-    iziToast.warning({
-      title: 'Caution',
-      message: 'Input field must not be empty',
-      position: 'topLeft',
-    });
+        
+        if (data.hits.length === 0) {
+            iziToast.error({
+                message:
+                    'Sorry, there are no images matching your search query. Please try again!',
+                position: 'topRight',
+            });
+            loadMoreEl.classList.add('is-hidden');
             galleryEL.innerHTML = '';
             searchFormEl.reset();
-    return;
-  }
-      if (data.hits.length === 0) {
-        iziToast.error({
-          message:
-            'Sorry, there are no images matching your search query. Please try again!',
-          position: 'topRight',
-        });
-          galleryEL.innerHTML = '';
-        searchFormEl.reset();
-        return;
-      }
-            console.log(data);
-            const galleryCards = data.hits.map(imgDetals => createGalleryCard(imgDetals)).join('');
+            return;
+        }
+           
+        const galleryCards = data.hits.map(imgDetals => createGalleryCard(imgDetals)).join('');
         galleryEL.innerHTML = galleryCards;
-        
-        smoothScroll();
          
-         const lightbox = new SimpleLightbox('.js-gallery a', {
-        overlay: true,
-        captionsData: 'alt',
-        overlayOpacity: 0.8,
-        captionDelay: 250,
-        focus: true,
-      });
         lightbox.refresh();
+   
         if (data.totalHits > 15) {
-        loadMoreEl.classList.remove('is-hidden')
+            loadMoreEl.classList.remove('is-hidden')
+        }
+        if (data.totalHits < 15) {
+      loadMoreEl.classList.add('is-hidden');
+      iziToast.info({
+        position: 'topRight',
+        message: "We're sorry, but you've reached the end of search results.",
+      });
     }
-} catch (error) {
-    iziToast.error({ message: error.message}); 
-}
-}
+    } catch (error) {
+        iziToast.error({ message: error.message });
+    } finally {
+        hideLoader();
+    }
+};
 
-const onLoadMore = async (event) => {
-    event.preventDefault();
- searchedValue = searchFormEl.elements.user_query.value.trim();
-    currentPaga = 1;
+const onLoadMore = async event => {
+ 
+    showLoader();
     try {
+        currentPaga ++;
         const data = await fetchPhotos(searchedValue, currentPaga)
-
+         
+        
             const galleryCards = data.hits.map(imgDetals => createGalleryCard(imgDetals)).join('');
         galleryEL.insertAdjacentHTML("beforeend", galleryCards);
         
-        smoothScroll();
-         
-         const lightbox = new SimpleLightbox('.js-gallery a', {
-        overlay: true,
-        captionsData: 'alt',
-        overlayOpacity: 0.8,
-        captionDelay: 250,
-        focus: true,
-      });
+        smoothScroll();  
         lightbox.refresh();
+
         if (Math.ceil(data.totalHits / 15) === currentPaga) {
             loadMoreEl.classList.add('is-hidden')
             iziToast.info({
@@ -102,7 +111,9 @@ const onLoadMore = async (event) => {
     }
 } catch (error) {
     iziToast.error({ message: error.message}); 
-}
+}finally {
+        hideLoader();
+    }
 }
 
 const smoothScroll = () => {
