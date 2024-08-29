@@ -24,20 +24,9 @@ const inputEl = document.querySelector('.js-search-input')
 const loadMoreEl = document.querySelector('.loader-more');
 
 
-function showLoader() {
-  loaderEl.classList.remove('is-hidden');
-}
-function hideLoader() {
-  loaderEl.classList.add('is-hidden');
-}
-
-showLoader();
-setTimeout(hideLoader, 2000);
-
 const onSearchFormSubmit = async event => {
 
     event.preventDefault();
-    galleryEL.innerHTML = '';
 
     searchedValue = inputEl.value.trim();
     currentPaga = 1;
@@ -48,9 +37,15 @@ const onSearchFormSubmit = async event => {
         'Sorry',
       position: 'topRight',
     });
-        hideLoader();
+          loaderEl.classList.add('is-hidden');
+       loadMoreEl.classList.add('is-hidden');
         return;
     }
+
+    galleryEL.innerHTML = '';
+    loaderEl.classList.remove('is-hidden');
+    loadMoreEl.classList.add('is-hidden');
+
     try {
         const data = await fetchPhotos(searchedValue, currentPaga)
         
@@ -60,6 +55,7 @@ const onSearchFormSubmit = async event => {
                     'Sorry, there are no images matching your search query. Please try again!',
                 position: 'topRight',
             });
+              loaderEl.classList.add('is-hidden');
             loadMoreEl.classList.add('is-hidden');
             galleryEL.innerHTML = '';
             searchFormEl.reset();
@@ -80,19 +76,21 @@ const onSearchFormSubmit = async event => {
         position: 'topRight',
         message: "We're sorry, but you've reached the end of search results.",
       });
-    }
+        }
+          loaderEl.classList.add('is-hidden');
     } catch (error) {
         iziToast.error({ message: error.message });
+          loaderEl.classList.add('is-hidden');
     } finally {
-        hideLoader();
-    }
+    loaderEl.classList.add('is-hidden');
+  }
 };
 
-const onLoadMore = async event => {
+const onLoadMore = async () => {
  
-    showLoader();
+    currentPaga++;
+    loaderEl.classList.remove('is-hidden');
     try {
-        currentPaga ++;
         const data = await fetchPhotos(searchedValue, currentPaga)
          
         
@@ -108,12 +106,14 @@ const onLoadMore = async event => {
                 message: "We're sorry, but you've reached the end of search results",
                 position: 'topRight'
             })
-    }
+        }
+          loaderEl.classList.add('is-hidden');
 } catch (error) {
-    iziToast.error({ message: error.message}); 
-}finally {
-        hideLoader();
-    }
+        iziToast.error({ message: error.message }); 
+          loaderEl.classList.add('is-hidden');
+} finally {
+    loaderEl.classList.add('is-hidden');
+  }
 }
 
 const smoothScroll = () => {
